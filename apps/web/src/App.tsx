@@ -14,11 +14,11 @@ import { ParticleNetwork } from './components/ui/ParticleNetwork';
 
 export const App = () => {
   const dispatch = useAppDispatch();
-  const { token, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { token, user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     const initAuth = async () => {
-      if (token && !isAuthenticated) {
+      if (token && !user) {
         try {
           const response = await api.get('/auth/me');
           dispatch(setUser(response.data.user));
@@ -30,7 +30,7 @@ export const App = () => {
     };
 
     initAuth();
-  }, [token, isAuthenticated, dispatch]);
+  }, [token, user, dispatch]);
 
   return (
     <BrowserRouter>

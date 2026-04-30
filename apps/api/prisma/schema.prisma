@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -37,7 +37,7 @@ model ProjectMember {
   id        String   @id @default(cuid())
   projectId String
   userId    String
-  role      String   @default("MEMBER") // SQLite enum workaround
+  role      Role     @default(MEMBER)
   joinedAt  DateTime @default(now())
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -49,8 +49,8 @@ model Task {
   id          String     @id @default(cuid())
   title       String
   description String?
-  status      String     @default("TODO") // SQLite enum workaround
-  priority    String     @default("MEDIUM") // SQLite enum workaround
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
   dueDate     DateTime?
   projectId   String
   assigneeId  String?
@@ -60,4 +60,21 @@ model Task {
   createdBy   User       @relation("TaskCreator", fields: [createdById], references: [id])
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
 }
