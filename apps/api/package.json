@@ -15,11 +15,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "@libsql/client": "^0.17.3",
+    "@prisma/adapter-libsql": "^7.8.0",
+    "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.4.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
@@ -33,7 +36,7 @@
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.6.0",
     "nodemon": "^3.1.14",
-    "prisma": "^7.8.0",
+    "prisma": "^6.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   }

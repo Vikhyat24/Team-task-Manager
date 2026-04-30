@@ -5,6 +5,10 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 
 import healthRouter from './routes/health';
+import authRouter from './routes/auth';
+import projectsRouter from './routes/projects';
+import tasksRouter from './routes/tasks';
+import dashboardRouter from './routes/dashboard';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -22,6 +26,10 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Routes
 app.use('/api', healthRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/projects', projectsRouter);
+app.use('/api/tasks', tasksRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 // 404 handler
 app.use((_req, res) => {
