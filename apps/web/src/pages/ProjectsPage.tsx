@@ -17,6 +17,11 @@ import {
   DialogTrigger,
 } from '../components/ui/dialog';
 import { Plus, FolderKanban, Users, ListTodo } from 'lucide-react';
+import { z } from 'zod';
+
+const projectSchema = z.object({
+  name: z.string().min(1, 'Project name is required')
+});
 
 interface Project {
   id: string;
@@ -34,6 +39,7 @@ export const ProjectsPage = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const fetchProjects = async () => {
     try {
@@ -53,7 +59,23 @@ export const ProjectsPage = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
     setCreating(true);
+
+    try {
+      projectSchema.parse({ name });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        err.issues.forEach((e: z.ZodIssue) => {
+          if (e.path[0]) errors[e.path[0].toString()] = e.message;
+        });
+        setFieldErrors(errors);
+        setCreating(false);
+        return;
+      }
+    }
+
     try {
       await api.post('/projects', { name, description: description || undefined });
       setName('');
@@ -61,7 +83,15 @@ export const ProjectsPage = () => {
       setDialogOpen(false);
       fetchProjects();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create project');
+      if (err.response?.data?.error?.details) {
+        const errors: Record<string, string> = {};
+        err.response.data.error.details.forEach((e: any) => {
+          if (e.path && e.path[0]) errors[e.path[0]] = e.message;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.error?.message || 'Failed to create project');
+      }
     } finally {
       setCreating(false);
     }
@@ -84,11 +114,11 @@ export const ProjectsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative z-10">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Projects</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your team projects</p>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">Projects</h1>
+          <p className="text-muted-foreground mt-2 text-lg tracking-tight">Manage your team projects</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -115,8 +145,9 @@ export const ProjectsPage = () => {
                     placeholder="e.g. Marketing Website"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    required
+                    className={fieldErrors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}
                   />
+                  {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="project-description">Description (optional)</Label>
@@ -141,9 +172,9 @@ export const ProjectsPage = () => {
 
       {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <FolderKanban className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">No projects yet</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-sm">
+          <FolderKanban className="h-16 w-16 text-indigo-400 opacity-50 mb-4" />
+          <h2 className="text-xl font-semibold text-foreground">No projects yet</h2>
+          <p className="text-muted-foreground mt-2 max-w-sm">
             Create your first project to start organizing tasks and collaborating with your team.
           </p>
         </div>
@@ -151,28 +182,28 @@ export const ProjectsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
             <Link key={project.id} to={`/projects/${project.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <Card className="hover:border-indigo-500/50 hover:bg-white/10 transition-all h-full cursor-pointer">
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <FolderKanban className="h-5 w-5 mr-2 text-blue-500" />
+                  <CardTitle className="flex items-center text-foreground">
+                    <FolderKanban className="h-5 w-5 mr-2 text-indigo-400" />
                     {project.name}
                   </CardTitle>
                   {project.description && (
-                    <CardDescription className="line-clamp-2">{project.description}</CardDescription>
+                    <CardDescription className="line-clamp-2 text-muted-foreground">{project.description}</CardDescription>
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <span className="flex items-center">
-                      <Users className="h-4 w-4 mr-1" />
+                      <Users className="h-4 w-4 mr-1 text-indigo-400" />
                       {project._count.members} member{project._count.members !== 1 ? 's' : ''}
                     </span>
                     <span className="flex items-center">
-                      <ListTodo className="h-4 w-4 mr-1" />
+                      <ListTodo className="h-4 w-4 mr-1 text-indigo-400" />
                       {project._count.tasks} task{project._count.tasks !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-3">
+                  <p className="text-xs text-muted-foreground mt-3 opacity-60">
                     Created {new Date(project.createdAt).toLocaleDateString()}
                   </p>
                 </CardContent>

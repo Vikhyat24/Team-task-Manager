@@ -9,26 +9,30 @@ export const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col h-full">
-      <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">TaskMaster</h1>
+    <div className="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 flex flex-col h-full z-20 relative">
+      <div className="h-16 flex items-center px-6 border-b border-white/10">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">TaskMaster</h1>
       </div>
       
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-2 relative z-10">
         {navItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition-colors ${
+              `group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
                 isActive
-                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                  : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
               }`
             }
           >
-            <item.icon className="h-5 w-5 mr-3 flex-shrink-0" />
-            {item.name}
+            {({ isActive }) => (
+              <>
+                <item.icon className={`h-5 w-5 mr-3 flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-indigo-400' : ''}`} />
+                {item.name}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

@@ -31,23 +31,23 @@ interface DashboardData {
 }
 
 const StatCard = ({ title, value, icon: Icon, color }: { title: string; value: number; icon: any; color: string }) => (
-  <Card>
+  <Card className="hover:border-indigo-500/50 transition-colors">
     <CardContent className="flex items-center p-6">
-      <div className={`p-3 rounded-lg ${color} mr-4`}>
+      <div className={`p-3 rounded-xl border border-white/10 ${color} mr-4 shadow-lg`}>
         <Icon className="h-6 w-6 text-white" />
       </div>
       <div>
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <p className="text-3xl font-bold tracking-tight text-foreground">{value}</p>
       </div>
     </CardContent>
   </Card>
 );
 
 const priorityColors: Record<string, string> = {
-  HIGH: 'text-red-600 bg-red-50 dark:bg-red-900/30',
-  MEDIUM: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30',
-  LOW: 'text-green-600 bg-green-50 dark:bg-green-900/30',
+  HIGH: 'text-red-400 bg-red-500/10 border border-red-500/20',
+  MEDIUM: 'text-yellow-400 bg-yellow-500/10 border border-yellow-500/20',
+  LOW: 'text-green-400 bg-green-500/10 border border-green-500/20',
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -96,21 +96,21 @@ export const Dashboard = () => {
   const stats = data?.stats;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative z-10">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
           Welcome back, {user?.name?.split(' ')[0]}!
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Here's what's happening across your projects.</p>
+        <p className="text-muted-foreground mt-2 text-lg tracking-tight">Here's what's happening across your projects.</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard title="Total Tasks" value={stats?.total ?? 0} icon={ListTodo} color="bg-blue-500" />
-        <StatCard title="To Do" value={stats?.todo ?? 0} icon={Circle} color="bg-gray-500" />
-        <StatCard title="In Progress" value={stats?.inProgress ?? 0} icon={Clock} color="bg-yellow-500" />
-        <StatCard title="Done" value={stats?.done ?? 0} icon={CheckCircle2} color="bg-green-500" />
-        <StatCard title="Overdue" value={stats?.overdue ?? 0} icon={AlertTriangle} color="bg-red-500" />
+        <StatCard title="Total Tasks" value={stats?.total ?? 0} icon={ListTodo} color="bg-blue-600/30" />
+        <StatCard title="To Do" value={stats?.todo ?? 0} icon={Circle} color="bg-slate-600/30" />
+        <StatCard title="In Progress" value={stats?.inProgress ?? 0} icon={Clock} color="bg-yellow-600/30" />
+        <StatCard title="Done" value={stats?.done ?? 0} icon={CheckCircle2} color="bg-green-600/30" />
+        <StatCard title="Overdue" value={stats?.overdue ?? 0} icon={AlertTriangle} color="bg-red-600/30" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -130,23 +130,23 @@ export const Dashboard = () => {
                   <Link
                     key={project.id}
                     to={`/projects/${project.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg border border-white/5 hover:border-indigo-500/30 hover:bg-white/5 transition-colors"
                   >
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">{project.name}</p>
+                      <p className="font-medium text-foreground">{project.name}</p>
                       {project.description && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                        <p className="text-sm text-muted-foreground truncate max-w-xs">
                           {project.description}
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <span className="flex items-center">
-                        <Users className="h-4 w-4 mr-1" />
+                        <Users className="h-4 w-4 mr-1 text-indigo-400" />
                         {project._count.members}
                       </span>
                       <span className="flex items-center">
-                        <ListTodo className="h-4 w-4 mr-1" />
+                        <ListTodo className="h-4 w-4 mr-1 text-indigo-400" />
                         {project._count.tasks}
                       </span>
                     </div>
@@ -154,8 +154,8 @@ export const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <FolderKanban className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <div className="text-center py-8 text-muted-foreground">
+                <FolderKanban className="h-12 w-12 mx-auto mb-3 opacity-30 text-indigo-400" />
                 <p className="font-medium">No projects yet</p>
                 <p className="text-sm mt-1">Create a project to get started!</p>
               </div>
@@ -179,13 +179,13 @@ export const Dashboard = () => {
                   <Link
                     key={task.id}
                     to={`/projects/${task.project.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg border border-white/5 hover:border-indigo-500/30 hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center space-x-3 min-w-0">
                       {statusIcons[task.status]}
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{task.project.name}</p>
+                        <p className="font-medium text-foreground truncate">{task.title}</p>
+                        <p className="text-xs text-muted-foreground">{task.project.name}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
@@ -193,7 +193,7 @@ export const Dashboard = () => {
                         {task.priority}
                       </span>
                       {task.dueDate && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(task.dueDate).toLocaleDateString()}
                         </span>
                       )}
@@ -202,8 +202,8 @@ export const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle2 className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-400" />
                 <p className="font-medium">All caught up!</p>
                 <p className="text-sm mt-1">No open tasks assigned to you.</p>
               </div>

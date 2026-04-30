@@ -27,6 +27,15 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { Plus, Users, ListTodo, Trash2, Shield, UserMinus, Clock, Circle, CheckCircle2 } from 'lucide-react';
+import { z } from 'zod';
+
+const taskSchema = z.object({
+  title: z.string().min(1, 'Task title is required'),
+});
+
+const inviteSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
 
 interface Member {
   id: string;
@@ -56,15 +65,15 @@ interface ProjectDetail {
 }
 
 const priorityColors: Record<string, string> = {
-  HIGH: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-  MEDIUM: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  LOW: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  HIGH: 'bg-red-500/10 text-red-400 border border-red-500/20',
+  MEDIUM: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  LOW: 'bg-green-500/10 text-green-400 border border-green-500/20',
 };
 
 const statusConfig: Record<string, { label: string; icon: any; color: string; column: string }> = {
-  TODO: { label: 'To Do', icon: Circle, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', column: 'bg-gray-50 dark:bg-gray-800/50' },
-  IN_PROGRESS: { label: 'In Progress', icon: Clock, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300', column: 'bg-blue-50 dark:bg-blue-900/20' },
-  DONE: { label: 'Done', icon: CheckCircle2, color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300', column: 'bg-green-50 dark:bg-green-900/20' },
+  TODO: { label: 'To Do', icon: Circle, color: 'text-slate-400', column: 'bg-white/5 border border-white/10' },
+  IN_PROGRESS: { label: 'In Progress', icon: Clock, color: 'text-blue-400', column: 'bg-blue-900/10 border border-blue-500/20' },
+  DONE: { label: 'Done', icon: CheckCircle2, color: 'text-green-400', column: 'bg-green-900/10 border border-green-500/20' },
 };
 
 export const ProjectDetailPage = () => {
@@ -82,11 +91,13 @@ export const ProjectDetailPage = () => {
   const [taskPriority, setTaskPriority] = useState('MEDIUM');
   const [taskAssigneeId, setTaskAssigneeId] = useState('');
   const [taskCreating, setTaskCreating] = useState(false);
+  const [taskFieldErrors, setTaskFieldErrors] = useState<Record<string, string>>({});
 
   // Invite member state
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [inviteFieldErrors, setInviteFieldErrors] = useState<Record<string, string>>({});
 
   const [error, setError] = useState('');
 
@@ -122,7 +133,23 @@ export const ProjectDetailPage = () => {
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setTaskFieldErrors({});
     setTaskCreating(true);
+
+    try {
+      taskSchema.parse({ title: taskTitle });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        err.issues.forEach((e: z.ZodIssue) => {
+          if (e.path[0]) errors[e.path[0].toString()] = e.message;
+        });
+        setTaskFieldErrors(errors);
+        setTaskCreating(false);
+        return;
+      }
+    }
+
     try {
       await api.post(`/projects/${projectId}/tasks`, {
         title: taskTitle,
@@ -137,7 +164,15 @@ export const ProjectDetailPage = () => {
       setTaskDialogOpen(false);
       fetchTasks();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create task');
+      if (err.response?.data?.error?.details) {
+        const errors: Record<string, string> = {};
+        err.response.data.error.details.forEach((e: any) => {
+          if (e.path && e.path[0]) errors[e.path[0]] = e.message;
+        });
+        setTaskFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.error?.message || 'Failed to create task');
+      }
     } finally {
       setTaskCreating(false);
     }
@@ -146,14 +181,38 @@ export const ProjectDetailPage = () => {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setInviteFieldErrors({});
     setInviting(true);
+
+    try {
+      inviteSchema.parse({ email: inviteEmail });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        err.issues.forEach((e: z.ZodIssue) => {
+          if (e.path[0]) errors[e.path[0].toString()] = e.message;
+        });
+        setInviteFieldErrors(errors);
+        setInviting(false);
+        return;
+      }
+    }
+
     try {
       await api.post(`/projects/${projectId}/members`, { email: inviteEmail });
       setInviteEmail('');
       setInviteDialogOpen(false);
       fetchProject();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to invite member');
+      if (err.response?.data?.error?.details) {
+        const errors: Record<string, string> = {};
+        err.response.data.error.details.forEach((e: any) => {
+          if (e.path && e.path[0]) errors[e.path[0]] = e.message;
+        });
+        setInviteFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.error?.message || 'Failed to invite member');
+      }
     } finally {
       setInviting(false);
     }
@@ -209,7 +268,7 @@ export const ProjectDetailPage = () => {
   }
 
   if (!project) {
-    return <div className="text-center py-20 text-gray-500">Project not found.</div>;
+    return <div className="text-center py-20 text-muted-foreground relative z-10">Project not found.</div>;
   }
 
   const todoTasks = tasks.filter((t) => t.status === 'TODO');
@@ -217,13 +276,13 @@ export const ProjectDetailPage = () => {
   const doneTasks = tasks.filter((t) => t.status === 'DONE');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative z-10">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">{project.name}</h1>
           {project.description && (
-            <p className="text-gray-500 dark:text-gray-400 mt-1">{project.description}</p>
+            <p className="text-muted-foreground mt-2 tracking-tight text-lg">{project.description}</p>
           )}
         </div>
       </div>
@@ -268,8 +327,9 @@ export const ProjectDetailPage = () => {
                         placeholder="e.g. Design homepage mockup"
                         value={taskTitle}
                         onChange={(e) => setTaskTitle(e.target.value)}
-                        required
+                        className={taskFieldErrors.title ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
+                      {taskFieldErrors.title && <p className="text-xs text-red-500 mt-1">{taskFieldErrors.title}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="task-desc">Description (optional)</Label>
@@ -328,41 +388,41 @@ export const ProjectDetailPage = () => {
               const config = statusConfig[status];
               const columnTasks = status === 'TODO' ? todoTasks : status === 'IN_PROGRESS' ? inProgressTasks : doneTasks;
               return (
-                <div key={status} className={`rounded-lg p-4 ${config.column} min-h-[200px]`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-300 flex items-center">
+                <div key={status} className={`rounded-xl p-4 ${config.column} min-h-[200px]`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`font-semibold tracking-tight flex items-center ${config.color}`}>
                       <config.icon className="h-4 w-4 mr-2" />
                       {config.label}
                     </h3>
-                    <Badge variant="secondary">{columnTasks.length}</Badge>
+                    <Badge variant="secondary" className="bg-white/10 text-white hover:bg-white/20">{columnTasks.length}</Badge>
                   </div>
                   <div className="space-y-2">
                     {columnTasks.map((task) => (
-                      <Card key={task.id} className="shadow-sm">
-                        <CardContent className="p-3">
+                      <Card key={task.id} className="shadow-lg hover:shadow-indigo-500/20 hover:border-indigo-500/50 cursor-pointer transition-all">
+                        <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-2">
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">{task.title}</p>
+                            <p className="font-medium text-sm text-foreground">{task.title}</p>
                             {(isAdmin || task.createdBy.id === user?.id) && (
                               <button
                                 onClick={() => handleDeleteTask(task.id)}
-                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                className="text-muted-foreground hover:text-red-400 transition-colors"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
                           </div>
                           {task.description && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">
+                            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
                               {task.description}
                             </p>
                           )}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
-                              <Badge className={`text-xs ${priorityColors[task.priority]}`}>
+                              <Badge className={`text-[10px] uppercase tracking-wider ${priorityColors[task.priority]}`}>
                                 {task.priority}
                               </Badge>
                               {task.assignee && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <span className="text-xs text-muted-foreground font-medium">
                                   {task.assignee.name}
                                 </span>
                               )}
@@ -371,8 +431,9 @@ export const ProjectDetailPage = () => {
                             <Select
                               value={task.status}
                               onValueChange={(val) => val && handleStatusChange(task.id, val)}
+                              disabled={!isAdmin && task.createdBy.id !== user?.id && task.assignee?.id !== user?.id}
                             >
-                              <SelectTrigger className="h-6 w-auto text-xs border-none shadow-none px-1">
+                              <SelectTrigger className="h-6 w-auto text-xs border border-white/10 bg-black/40 text-muted-foreground shadow-none px-2 rounded-md hover:bg-white/10 transition-colors disabled:opacity-50">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -386,7 +447,7 @@ export const ProjectDetailPage = () => {
                       </Card>
                     ))}
                     {columnTasks.length === 0 && (
-                      <p className="text-xs text-center text-gray-400 py-4">No tasks</p>
+                      <p className="text-xs text-center text-muted-foreground py-6 opacity-50">No tasks</p>
                     )}
                   </div>
                 </div>
@@ -426,8 +487,9 @@ export const ProjectDetailPage = () => {
                           placeholder="teammate@example.com"
                           value={inviteEmail}
                           onChange={(e) => setInviteEmail(e.target.value)}
-                          required
+                          className={inviteFieldErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
                         />
+                        {inviteFieldErrors.email && <p className="text-xs text-red-500 mt-1">{inviteFieldErrors.email}</p>}
                       </div>
                     </div>
                     <DialogFooter>
@@ -445,15 +507,15 @@ export const ProjectDetailPage = () => {
             {project.members.map((member) => (
               <div
                 key={member.id}
-                className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                className="flex items-center justify-between p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:border-indigo-500/30 transition-colors"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
+                <div className="flex items-center space-x-4">
+                  <div className="h-10 w-10 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-semibold shadow-inner">
                     {member.user.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{member.user.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{member.user.email}</p>
+                    <p className="font-medium text-foreground tracking-tight">{member.user.name}</p>
+                    <p className="text-sm text-muted-foreground">{member.user.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
